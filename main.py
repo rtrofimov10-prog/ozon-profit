@@ -3,10 +3,10 @@ import os
 import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any
+from pathlib import Path
 
 app = FastAPI(
     title="OzonProfit",
@@ -87,13 +87,13 @@ class OzonClient:
 
 ozon_client = OzonClient(OZON_SELLER_API_KEY, OZON_CLIENT_ID)
 
-# API Routes
+# Routes
 @app.get("/")
 async def serve_frontend():
-    try:
-        return FileResponse("public/index.html", media_type="text/html")
-    except:
-        return {"message": "Welcome to OzonProfit API", "version": "2.0.0"}
+    html_path = Path(__file__).parent / "public" / "index.html"
+    if html_path.exists():
+        return FileResponse(html_path, media_type="text/html")
+    return {"message": "Welcome to OzonProfit API", "version": "2.0.0", "status": "Backend running"}
 
 @app.get("/api/v1/dashboard")
 async def get_dashboard():
