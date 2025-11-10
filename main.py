@@ -24,7 +24,7 @@ app.add_middleware(
 )
 
 # Configuration from environment
-OZON_API_URL = "https://api.ozon.ru"
+OZON_API_URL = "https://api-seller.ozon.ru"
 OZON_SELLER_API_KEY = os.getenv("OZON_SELLER_API_KEY", "")
 OZON_CLIENT_ID = os.getenv("OZON_CLIENT_ID", "")
 
@@ -69,7 +69,7 @@ class OzonClient:
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
-                    f"{self.base_url}/v3/orders/list",
+                    f"{self.base_url}/v3/posting/fbs/list",
                     headers={
                         "Client-Id": self.client_id,
                         "Api-Key": self.api_key,
