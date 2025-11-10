@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import httpx
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -47,25 +47,25 @@ class OzonClient:
         self.base_url = OZON_API_URL
     
     async def get_products(self):
-        """Get list of products from Ozon API"""
+        """Get list of products from Ozon API using stocks endpoint"""
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
-                    f"{self.base_url}/v1/product/info",
+                    f"{self.base_url}/v1/product/info/stocks",
                     headers={
                         "Client-Id": self.client_id,
                         "Api-Key": self.api_key,
                         "Content-Type": "application/json"
                     },
-                    json={"limit": 100, "offset": 0},
+                    json={"page": 1, "page_size": 100},
                     timeout=10
                 )
                 
                 if response.status_code == 200:
                     data = response.json()
                     print(f"Ozon API Products Response: {data}")
-                    products = data.get("products", [])
-                    return products if products else []
+                    items = data.get("items", [])
+                    return items if items else []
                 else:
                     print(f"Ozon API Error (Products): {response.status_code} - {response.text}")
                     return []
@@ -77,6 +77,11 @@ class OzonClient:
         """Get list of orders from Ozon API (FBS)"""
         try:
             async with httpx.AsyncClient() as client:
+                # Set date range for last 30 days
+                now = datetime.utcnow()
+                start_date = (now - timedelta(days=30)).isoformat() + "Z"
+                end_date = now.isoformat() + "Z"
+                
                 response = await client.post(
                     f"{self.base_url}/v3/posting/fbs/list",
                     headers={
@@ -86,7 +91,12 @@ class OzonClient:
                     },
                     json={
                         "limit": 100,
-                        "offset": 0
+                        "offset": 0,
+                        "filter": {
+                            "processed_at_from": start_date,
+                            "processed_at_to": end_date,
+                            "status": ""
+                        }
                     },
                     timeout=10
                 )
