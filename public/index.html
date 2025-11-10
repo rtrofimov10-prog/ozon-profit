@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OzonProfit - Управление магазином Ozon</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: #333; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .header { background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header h1 { color: #667eea; font-size: 2.5em; margin-bottom: 10px; }
+        .header p { color: #666; font-size: 1.1em; }
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card h3 { color: #667eea; margin-bottom: 10px; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; }
+        .card .value { font-size: 2.5em; color: #333; font-weight: bold; }
+        .card .unit { font-size: 0.9em; color: #999; margin-top: 5px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; }
+        .tab { padding: 12px 20px; background: transparent; border: none; cursor: pointer; color: #666; font-size: 1em; border-bottom: 3px solid transparent; transition: all 0.3s; }
+        .tab.active { color: #667eea; border-bottom-color: #667eea; }
+        .content { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .table { width: 100%; border-collapse: collapse; }
+        .table th { background: #f5f5f5; padding: 12px; text-align: left; font-weight: 600; color: #333; border-bottom: 2px solid #eee; }
+        .table td { padding: 12px; border-bottom: 1px solid #eee; }
+        .table tr:hover { background: #f9f9f9; }
+        .btn { padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1em; transition: all 0.3s; }
+        .btn:hover { background: #764ba2; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+        .loading { text-align: center; padding: 40px; color: #999; }
+        .error { background: #fee; color: #c33; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        .success { background: #efe; color: #3c3; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [dashboard, setDashboard] = useState(null);
+            const [products, setProducts] = useState([]);
+            const [orders, setOrders] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+
+            useEffect(() => {
+                fetchDashboard();
+            }, []);
+
+            const fetchDashboard = async () => {
+                setLoading(true);
+                setError('');
+                try {
+                    const res = await fetch('/api/v1/dashboard');
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        setDashboard(data.data);
+                    }
+                } catch (err) {
+                    setError('Ошибка загрузки данных: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const fetchProducts = async () => {
+                setLoading(true);
+                try {
+                    const res = await fetch('/api/v1/products');
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        setProducts(data.data);
+                    }
+                } catch (err) {
+                    setError('Ошибка загрузки товаров');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const fetchOrders = async () => {
+                setLoading(true);
+                try {
+                    const res = await fetch('/api/v1/orders');
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        setOrders(data.data);
+                    }
+                } catch (err) {
+                    setError('Ошибка загрузки заказов');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleTabClick = (tab) => {
+                setActiveTab(tab);
+                if (tab === 'products') fetchProducts();
+                if (tab === 'orders') fetchOrders();
+            };
+
+            return (
+                <div className="container">
+                    <div className="header">
+                        <h1>🊀 OzonProfit</h1>
+                        <p>Полноценное управление вашим магазином на платформе Ozon</p>
+                    </div>
+
+                    {error && <div className="error">⚠️ {error}</div>}
+
+                    {dashboard && activeTab === 'dashboard' && (
+                        <div className="dashboard">
+                            <div className="card">
+                                <h3>📦 Всего товаров</h3>
+                                <div className="value">{dashboard.total_products}</div>
+                            </div>
+                            <div className="card">
+                                <h3>📋 Заказов</h3>
+                                <div className="value">{dashboard.total_orders}</div>
+                            </div>
+                            <div className="card">
+                                <h3>💰 Выручка</h3>
+                                <div className="value">0 ₽</div>
+                                <div className="unit">Интеграция с API в процессе</div>
+                            </div>
+                            <div className="card">
+                                <h3>⭐ Рейтинг</h3>
+                                <div className="value">4.8</div>
+                                <div className="unit">Средняя оценка</div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="tabs">
+                        <button className={`tab ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => handleTabClick('dashboard')}>Дашборд</button>
+                        <button className={`tab ${activeTab === 'products' ? 'active' : ''}`} onClick={() => handleTabClick('products')}>Товары</button>
+                        <button className={`tab ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => handleTabClick('orders')}>Заказы</button>
+                        <button className={`tab ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => handleTabClick('analytics')}>Аналитика</button>
+                    </div>
+
+                    <div className="content">
+                        {loading && <div className="loading">⏳ Загрузка...</div>}
+                        
+                        {!loading && activeTab === 'products' && (
+                            <table className="table">
+                                <thead>
+                                    <tr><th>ID</th><th>Название</th><th>Цена</th><th>Количество</th></tr>
+                                </thead>
+                                <tbody>
+                                    {products.length === 0 ? <tr><td colSpan="4" style={{textAlign:'center', color:'#999'}}>Товары не найдены</td></tr> : products.map(p => <tr key={p.product_id}><td>{p.product_id}</td><td>{p.title}</td><td>{p.price} ₽</td><td>{p.quantity} шт</td></tr>)}
+                                </tbody>
+                            </table>
+                        )}
+                        
+                        {!loading && activeTab === 'orders' && (
+                            <table className="table">
+                                <thead>
+                                    <tr><th>ID</th><th>Статус</th><th>Сумма</th><th>Дата</th></tr>
+                                </thead>
+                                <tbody>
+                                    {orders.length === 0 ? <tr><td colSpan="4" style={{textAlign:'center', color:'#999'}}>Заказы не найдены</td></tr> : orders.map(o => <tr key={o.order_id}><td>{o.order_id}</td><td>{o.status}</td><td>{o.total_price} ₽</td><td>{o.created_at}</td></tr>)}
+                                </tbody>
+                            </table>
+                        )}
+
+                        {!loading && activeTab === 'analytics' && (
+                            <div style={{textAlign:'center', padding:'40px', color:'#999'}}>
+                                <p>📊 Раздел аналитики находится в разработке</p>
+                                <p>Интеграция с Ozon Performance API скоро будет добавлена</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
