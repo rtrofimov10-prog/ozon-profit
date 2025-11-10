@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import httpx
+from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -44,13 +45,13 @@ class OzonClient:
         self.api_key = api_key
         self.client_id = client_id
         self.base_url = OZON_API_URL
-
+    
     async def get_products(self):
         """Get list of products from Ozon API"""
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
-                    f"{self.base_url}/v2/product/list",
+                    f"{self.base_url}/v1/product/info",
                     headers={
                         "Client-Id": self.client_id,
                         "Api-Key": self.api_key,
@@ -71,7 +72,7 @@ class OzonClient:
         except Exception as e:
             print(f"Error getting products: {e}")
             return []
-
+    
     async def get_orders(self):
         """Get list of orders from Ozon API (FBS)"""
         try:
@@ -85,12 +86,7 @@ class OzonClient:
                     },
                     json={
                         "limit": 100,
-                        "offset": 0,
-                        "filter": {
-                            "since": "",
-                            "to": "",
-                            "status": ""
-                        }
+                        "offset": 0
                     },
                     timeout=10
                 )
