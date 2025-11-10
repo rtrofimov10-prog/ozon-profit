@@ -3,8 +3,10 @@ import os
 import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
+from typing import List, Dict, Any
 
 app = FastAPI(
     title="OzonProfit",
@@ -26,13 +28,6 @@ OZON_API_URL = "https://api.ozon.ru"
 OZON_SELLER_API_KEY = os.getenv("OZON_SELLER_API_KEY", "")
 OZON_CLIENT_ID = os.getenv("OZON_CLIENT_ID", "")
 
-# Pydantic models
-class Store(BaseModel):
-    store_id: str
-    name: str
-    api_key: str
-    client_id: str
-
 class ProductData(BaseModel):
     product_id: int
     title: str
@@ -44,7 +39,6 @@ class OrderData(BaseModel):
     status: str
     total_price: float
 
-# Ozon API Client
 class OzonClient:
     def __init__(self, api_key: str, client_id: str):
         self.api_key = api_key
@@ -95,18 +89,11 @@ ozon_client = OzonClient(OZON_SELLER_API_KEY, OZON_CLIENT_ID)
 
 # API Routes
 @app.get("/")
-def read_root():
-    return {
-        "message": "Welcome to OzonProfit API",
-        "version": "2.0.0",
-        "status": "Backend API is running",
-        "docs": "/docs",
-        "redoc": "/redoc"
-    }
-
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
+async def serve_frontend():
+    try:
+        return FileResponse("public/index.html", media_type="text/html")
+    except:
+        return {"message": "Welcome to OzonProfit API", "version": "2.0.0"}
 
 @app.get("/api/v1/dashboard")
 async def get_dashboard():
@@ -140,6 +127,10 @@ async def get_orders():
         return {"status": "success", "data": orders}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
 
 if __name__ == "__main__":
     import uvicorn
