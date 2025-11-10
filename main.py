@@ -44,8 +44,9 @@ class OzonClient:
         self.api_key = api_key
         self.client_id = client_id
         self.base_url = OZON_API_URL
-        
+
     async def get_products(self):
+        """Get list of products from Ozon API"""
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -55,17 +56,24 @@ class OzonClient:
                         "Api-Key": self.api_key,
                         "Content-Type": "application/json"
                     },
-                    json={"limit": 50, "offset": 0},
+                    json={"limit": 100, "offset": 0},
                     timeout=10
                 )
+                
                 if response.status_code == 200:
-                    return response.json().get("products", [])
-                return []
+                    data = response.json()
+                    print(f"Ozon API Products Response: {data}")
+                    products = data.get("products", [])
+                    return products if products else []
+                else:
+                    print(f"Ozon API Error (Products): {response.status_code} - {response.text}")
+                    return []
         except Exception as e:
             print(f"Error getting products: {e}")
             return []
-    
+
     async def get_orders(self):
+        """Get list of orders from Ozon API (FBS)"""
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -75,62 +83,89 @@ class OzonClient:
                         "Api-Key": self.api_key,
                         "Content-Type": "application/json"
                     },
-                    json={"limit": 50, "offset": 0},
+                    json={
+                        "limit": 100,
+                        "offset": 0,
+                        "filter": {
+                            "since": "",
+                            "to": "",
+                            "status": ""
+                        }
+                    },
                     timeout=10
                 )
+                
                 if response.status_code == 200:
-                    return response.json().get("orders", [])
-                return []
+                    data = response.json()
+                    print(f"Ozon API Orders Response: {data}")
+                    postings = data.get("postings", [])
+                    return postings if postings else []
+                else:
+                    print(f"Ozon API Error (Orders): {response.status_code} - {response.text}")
+                    return []
         except Exception as e:
             print(f"Error getting orders: {e}")
             return []
 
 ozon_client = OzonClient(OZON_SELLER_API_KEY, OZON_CLIENT_ID)
 
-# Routes
 @app.get("/")
-async def serve_frontend():
-    html_path = Path(__file__).parent / "public" / "index.html"
-    if html_path.exists():
-        return FileResponse(html_path, media_type="text/html")
-    return {"message": "Welcome to OzonProfit API", "version": "2.0.0", "status": "Backend running"}
+async def read_root():
+    """Serve the main HTML file"""
+    html_file = Path(__file__).parent / "public" / "index.html"
+    if html_file.exists():
+        return FileResponse(html_file)
+    return {"error": "HTML file not found"}
+
+@app.get("/health")
+async def health():
+    """Health check endpoint"""
+    return {"status": "ok"}
 
 @app.get("/api/v1/dashboard")
 async def get_dashboard():
+    """Get dashboard data"""
     try:
         products = await ozon_client.get_products()
         orders = await ozon_client.get_orders()
+        
+        total_products = len(products) if isinstance(products, list) else 0
+        total_orders = len(orders) if isinstance(orders, list) else 0
+        
         return {
             "status": "success",
             "data": {
-                "total_products": len(products),
-                "total_orders": len(orders),
-                "products": products[:5] if products else [],
-                "recent_orders": orders[:5] if orders else []
+                "total_products": total_products,
+                "total_orders": total_orders,
+                "products": products[:5] if isinstance(products, list) else [],
+                "recent_orders": orders[:5] if isinstance(orders, list) else []
             }
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error in dashboard: {e}")
+        return {
+            "status": "error",
+            "message": str(e),
+            "data": {"total_products": 0, "total_orders": 0, "products": [], "recent_orders": []}
+        }
 
 @app.get("/api/v1/products")
 async def get_products():
+    """Get products list"""
     try:
         products = await ozon_client.get_products()
-        return {"status": "success", "data": products}
+        return {"status": "success", "data": products if isinstance(products, list) else []}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"status": "error", "message": str(e), "data": []}
 
 @app.get("/api/v1/orders")
 async def get_orders():
+    """Get orders list"""
     try:
         orders = await ozon_client.get_orders()
-        return {"status": "success", "data": orders}
+        return {"status": "success", "data": orders if isinstance(orders, list) else []}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
+        return {"status": "error", "message": str(e), "data": []}
 
 if __name__ == "__main__":
     import uvicorn
