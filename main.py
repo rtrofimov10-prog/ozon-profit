@@ -1,13 +1,14 @@
+# -*- coding: utf-8 -*-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="OzonProfit",
-    description="Полнофункциональное веб-приложение для аналитики, учета и управления магазином на Ozon",
+    description="Full-featured web application for analytics, accounting and management of stores on Ozon",
     version="1.0.0"
 )
 
-# CORS middleware
+# CORS middleware configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,23 +19,24 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
-    """Главная страница API"""
+    """Main API endpoint"""
     return {
-        "message": "Добро пожаловать в OzonProfit API",
+        "message": "Welcome to OzonProfit API",
         "version": "1.0.0",
-        "docs": "/docs"
+        "docs": "/docs",
+        "redoc": "/redoc"
     }
 
 @app.get("/health")
 def health_check():
-    """Проверка здоровья приложения"""
+    """Health check endpoint"""
     return {"status": "ok"}
 
 @app.get("/api/v1/dashboard")
 def get_dashboard():
-    """API для получения данных дашборда"""
+    """Get dashboard data"""
     return {
-        "title": "Дашборд",
+        "title": "Dashboard",
         "stats": {
             "total_sales": 0,
             "total_revenue": 0,
