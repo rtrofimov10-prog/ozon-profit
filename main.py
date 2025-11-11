@@ -79,8 +79,8 @@ class OzonClient:
             async with httpx.AsyncClient() as client:
                 # Set date range for last 30 days
                 now = datetime.utcnow()
-                start_date = (now - timedelta(days=30)).isoformat() + "Z"
-                end_date = now.isoformat() + "Z"
+                start_date = int((now - timedelta(days=30)).timestamp() * 1000)
+                end_date = int(now.timestamp() * 1000)
                 
                 response = await client.post(
                     f"{self.base_url}/v3/posting/fbs/list",
@@ -128,7 +128,7 @@ async def health():
     """Health check endpoint"""
     return {"status": "ok"}
 
-@app.get("/api/v1/dashboard")
+@app.api_route(\"/api/v1/dashboard\", methods=[\"GET\", \"HEAD\"])
 async def get_dashboard():
     """Get dashboard data"""
     try:
