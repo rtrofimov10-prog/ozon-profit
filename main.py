@@ -93,8 +93,8 @@ class OzonClient:
                         "limit": 100,
                         "offset": 0,
                         "filter": {
-                "ProcessedAtFrom": start_date,
-                                            "ProcessedAtTo": end_date,
+                "cutoff_from": start_date,
+                                            "cutoff_to": end_date,
                             "status": ""
                         }
                     },
