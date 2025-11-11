@@ -128,7 +128,7 @@ async def health():
     """Health check endpoint"""
     return {"status": "ok"}
 
-@app.api_route(\"/api/v1/dashboard\", methods=[\"GET\", \"HEAD\"])
+@app.get("/api/v1/dashboard")
 async def get_dashboard():
     """Get dashboard data"""
     try:
