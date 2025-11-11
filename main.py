@@ -79,8 +79,8 @@ class OzonClient:
             async with httpx.AsyncClient() as client:
                 # Set date range for last 30 days
                 now = datetime.utcnow()
-                start_date = int((now - timedelta(days=30)).timestamp() * 1000)
-                end_date = int(now.timestamp() * 1000)
+                start_date = int((now - timedelta(days=30)).timestamp())
+                end_date = int(now.timestamp())
                 
                 response = await client.post(
                     f"{self.base_url}/v3/posting/fbs/list",
